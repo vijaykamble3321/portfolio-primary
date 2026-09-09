@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -12,12 +12,14 @@ import { CommandPalette } from './components/CommandPalette';
 import { DevHudOverlay } from './components/DevHudOverlay';
 import { PrototypePlaygroundModal } from './components/PrototypePlaygroundModal';
 import { ProjectInquiryDrawer } from './components/ProjectInquiryDrawer';
+import { PageLoader } from './components/PageLoader';
 import type { NavTab, CaseStudy } from './types';
 import { sound } from './lib/sound';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function App() {
+  const [isLoaded, setIsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState<NavTab>('DESIGN');
   const [selectedCaseStudy, setSelectedCaseStudy] = useState<CaseStudy | null>(null);
   const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null);
@@ -29,6 +31,10 @@ export default function App() {
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [isInquiryOpen, setIsInquiryOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  const handleLoaderComplete = useCallback(() => {
+    setIsLoaded(true);
+  }, []);
 
   // Handle Theme Toggle
   const handleToggleTheme = () => {
@@ -163,11 +169,20 @@ export default function App() {
   };
 
   return (
-    <div
-      className={`min-h-screen flex flex-col font-sans-body antialiased relative transition-colors duration-200 ${
-        theme === 'dark' ? 'dark bg-[#0A0A0A] text-[#EDEDED]' : 'bg-[#FFFFFF] text-[#0A0A0A]'
-      }`}
-    >
+    <>
+      {/* Full-screen preloader — renders until JS + assets are ready */}
+      <PageLoader onComplete={handleLoaderComplete} />
+
+      <div
+        className={`min-h-screen flex flex-col font-sans-body antialiased relative transition-colors duration-200 ${
+          theme === 'dark' ? 'dark bg-[#0A0A0A] text-[#EDEDED]' : 'bg-[#FFFFFF] text-[#0A0A0A]'
+        }`}
+        style={{
+          opacity: isLoaded ? 1 : 0,
+          transition: 'opacity 0.5s ease 0.1s',
+          pointerEvents: isLoaded ? 'auto' : 'none',
+        }}
+      >
       {/* 1. Fixed Header with Developer controls */}
       <Header
         activeTab={activeTab}
@@ -241,7 +256,8 @@ export default function App() {
         isOpen={isInquiryOpen}
         onClose={() => setIsInquiryOpen(false)}
       />
-    </div>
+      </div>
+    </>
   );
 }
 
